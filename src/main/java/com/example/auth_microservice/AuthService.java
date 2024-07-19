@@ -1,6 +1,8 @@
 package com.example.auth_microservice;
 
 import com.example.auth_microservice.dto.AuthRequestDto;
+import com.example.auth_microservice.dto.JwtResponseDto;
+import com.example.auth_microservice.dto.RefreshTokenRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final AppUserRepository appUserRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
@@ -26,15 +29,29 @@ public class AuthService {
         );
 
         if ( authentication.isAuthenticated() ) {
-            String token = jwtService.generateToken( authRequestDto.getUsername() );
-            return ResponseEntity.ok().header( HttpHeaders.SET_COOKIE, token ).build();
-//            return JwtResponseDto
-//                    .builder()
-//                    .accessToken( jwtService.generateToken( authRequestDto.getUsername() ) )
-//                    .build();
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken( authRequestDto.getUsername() );
+            String accessToken = jwtService.generateToken( authRequestDto.getUsername() );
+            return ResponseEntity
+                    .ok()
+                    .header( HttpHeaders.SET_COOKIE, accessToken )
+                    .header( HttpHeaders.SET_COOKIE, refreshToken.toString() )
+                    .build();
         } else {
             throw new UsernameNotFoundException( "Invalid user request." );
         }
+    }
+
+    public JwtResponseDto refreshToken( RefreshTokenRequestDto refreshTokenRequestDto ) {
+        return refreshTokenService.findByToken( refreshTokenRequestDto.getToken() )
+                .map( refreshTokenService::verifyExpiration )
+                .map( RefreshToken::getAppUser )
+                .map( appUser -> {
+                    String accessToken = jwtService.generateToken( appUser.getUsername() );
+                    return JwtResponseDto.builder()
+                            .accessToken( accessToken )
+                            .refreshToken( refreshTokenRequestDto.getToken() )
+                            .build();
+                } ).orElseThrow( () -> new RuntimeException( "Refresh Token is not in the DB!" ) );
     }
 
     public void saveNewUser( AuthRequestDto authRequestDto ) {

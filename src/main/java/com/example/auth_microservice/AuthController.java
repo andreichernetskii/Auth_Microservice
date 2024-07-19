@@ -2,6 +2,7 @@ package com.example.auth_microservice;
 
 import com.example.auth_microservice.dto.AuthRequestDto;
 import com.example.auth_microservice.dto.JwtResponseDto;
+import com.example.auth_microservice.dto.RefreshTokenRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,11 @@ public class AuthController {
     @PostMapping( "/login" )
     public ResponseEntity<?> authenticateAndGetToken( @RequestBody AuthRequestDto authRequestDto ) {
         return authService.authenticateAndGetToken( authRequestDto );
+    }
+
+    @PostMapping( "/refresh_token" )
+    public JwtResponseDto refreshToken( @RequestBody RefreshTokenRequestDto refreshTokenRequestDto ) {
+        return authService.refreshToken( refreshTokenRequestDto );
     }
 
     @PostMapping( "/save" )

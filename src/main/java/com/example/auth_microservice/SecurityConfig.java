@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth -> auth
                                 .requestMatchers( "/api/v1/login" ).permitAll()
+                                .requestMatchers( "api/v1/refresh_token" ).permitAll()
                                 .requestMatchers( "api/v1/**" ). permitAll()
                 )
                 .sessionManagement( session -> session.sessionCreationPolicy( SessionCreationPolicy.STATELESS ) )
